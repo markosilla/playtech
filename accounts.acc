@@ -1,0 +1,7 @@
+#Accounts store as java properties
+#Sun Aug 22 08:55:12 CEST 2021
+xxs=noPass0
+rex=r\:rngPass\:j8
+bin=-txtBin
+blox=b\:rngPass\:r
+dana=d\:rngPass\:dw
