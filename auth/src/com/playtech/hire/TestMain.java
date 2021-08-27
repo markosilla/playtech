@@ -7,6 +7,7 @@ import java.util.concurrent.Callable;
 import com.playtech.hire.test.ChangePasswordTest;
 import com.playtech.hire.test.CreateInitial;
 import com.playtech.hire.test.PersistentTest;
+import com.playtech.hire.test.SecurityTest;
 import com.playtech.hire.test.ValidityTest;
 
 public class TestMain {
@@ -27,7 +28,8 @@ public class TestMain {
         
         new PersistentTest(),//run it thrice
         new PersistentTest(),
-        new PersistentTest()
+        new PersistentTest(),
+        new SecurityTest()
     );
     
     int failures = 0;
