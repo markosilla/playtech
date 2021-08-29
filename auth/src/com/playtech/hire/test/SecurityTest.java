@@ -10,33 +10,21 @@ public class SecurityTest implements Callable<Void> {
 
     @Override
     public Void call() throws Exception {
-	testEncryptionFlow();
+	testPasswordEncryptionService();
 	return null;
     }
 
-    void testEncryptionFlow() throws Exception {
+    void testPasswordEncryptionService() throws Exception {
 	PasswordEncryptionService pes = new PasswordEncryptionService();
-	byte[] salt = pes.generateSalt();
-	byte[] otherSalt = pes.generateSalt();
-	byte[] encryptedPass = pes.getEncryptedPassword("secretPassword", salt);
+	String passwordWithSalt = pes.getEncryptedPasswordWithSalt("secretPassword");
 	boolean authRes;
 
-	authRes = pes.authenticate("secretPassword", encryptedPass, salt);
+	authRes = pes.authenticate("secretPassword", passwordWithSalt);
 	if (authRes != true)
 	    fail("Failed to authenicate valid password and username");
 
-	authRes = pes.authenticate("secretPassword", encryptedPass, otherSalt);
+	authRes = pes.authenticate("incorrectPassword", passwordWithSalt);
 	if (authRes != false)
-	    fail("Failed to reject authenication with invalid salt");
-
-	authRes = pes.authenticate("incorrectPassword", encryptedPass, salt);
-	if (authRes != false)
-	    fail("Failed to reject authenication with invalid password");
-
-	try {
-	    authRes = pes.authenticate("incorrectPassword", encryptedPass, null);
-	    fail("javax null salt not accepted?");
-	} catch (NullPointerException npe) {
-	}
+		  fail("Failed to reject authenication with invalid salt");
     }
 }

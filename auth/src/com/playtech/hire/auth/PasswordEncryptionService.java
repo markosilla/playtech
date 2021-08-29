@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.Arrays;
+import java.util.Base64;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
@@ -18,7 +19,40 @@ import javax.crypto.spec.PBEKeySpec;
  */
 public class PasswordEncryptionService {
 
-    public boolean authenticate(String attemptedPassword, byte[] encryptedPassword, byte[] salt)
+    private static final int SALT_LEN = 8;
+
+    public boolean authenticate(String attemptedPassword, String passwordWithSalt)
+	    throws NoSuchAlgorithmException, InvalidKeySpecException {
+	byte[] passwordWithSaltInBytes = this.decodeStringToBytes(passwordWithSalt);
+	byte[] salt = new byte[SALT_LEN];
+	byte[] encryptedPass = null;
+
+	if (passwordWithSaltInBytes.length <= SALT_LEN)
+	    throw new InvalidKeySpecException("Invalid hash key");
+
+	encryptedPass = new byte[passwordWithSaltInBytes.length - SALT_LEN];
+
+	System.arraycopy(passwordWithSaltInBytes, 0, salt, 0, SALT_LEN);
+	System.arraycopy(passwordWithSaltInBytes, SALT_LEN, encryptedPass, 0,
+		(passwordWithSaltInBytes.length - SALT_LEN));
+
+	return authenticate(attemptedPassword, encryptedPass, salt);
+    }
+
+    public String getEncryptedPasswordWithSalt(String plainTextPassword)
+	    throws NoSuchAlgorithmException, InvalidKeySpecException {
+	byte[] randomSalt = generateSalt();
+	byte[] encryptedPass = getEncryptedPassword(plainTextPassword, randomSalt);
+	byte[] passwordWithSaltInBytes = new byte[randomSalt.length + encryptedPass.length];
+
+	/* saltedPassword = salt + password */
+	System.arraycopy(randomSalt, 0, passwordWithSaltInBytes, 0, SALT_LEN);
+	System.arraycopy(encryptedPass, 0, passwordWithSaltInBytes, SALT_LEN, encryptedPass.length);
+
+	return encodeBytesToString(passwordWithSaltInBytes);
+    }
+
+    private boolean authenticate(String attemptedPassword, byte[] encryptedPassword, byte[] salt)
 	    throws NoSuchAlgorithmException, InvalidKeySpecException {
 	// Encrypt the clear-text password using the same salt that was used to
 	// encrypt the original password
@@ -29,7 +63,7 @@ public class PasswordEncryptionService {
 	return Arrays.equals(encryptedPassword, encryptedAttemptedPassword);
     }
 
-    public byte[] getEncryptedPassword(String password, byte[] salt)
+    private byte[] getEncryptedPassword(String password, byte[] salt)
 	    throws NoSuchAlgorithmException, InvalidKeySpecException {
 	// PBKDF2 with SHA-1 as the hashing algorithm. Note that the NIST
 	// specifically names SHA-1 as an acceptable hashing algorithm for PBKDF2
@@ -50,14 +84,22 @@ public class PasswordEncryptionService {
 	return f.generateSecret(spec).getEncoded();
     }
 
-    public byte[] generateSalt() throws NoSuchAlgorithmException {
+    private byte[] generateSalt() throws NoSuchAlgorithmException {
 	// VERY important to use SecureRandom instead of just Random
 	SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
 
 	// Generate a 8 byte (64 bit) salt as recommended by RSA PKCS5
-	byte[] salt = new byte[8];
+	byte[] salt = new byte[SALT_LEN];
 	random.nextBytes(salt);
 
 	return salt;
+    }
+
+    private String encodeBytesToString(byte[] bytes) {
+	return Base64.getEncoder().encodeToString(bytes);
+    }
+
+    private byte[] decodeStringToBytes(String key) {
+	return Base64.getDecoder().decode(key);
     }
 }
