@@ -12,8 +12,10 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadLocalRandom;
 
 import com.playtech.hire.auth.Accounts;
+import com.playtech.hire.auth.IStorage;
 import com.playtech.hire.auth.IllegalOperation;
 import com.playtech.hire.auth.LoginEntry;
+import com.playtech.hire.auth.Storage;
 
 public class PersistentTest implements Callable<Void> {
 
@@ -24,7 +26,6 @@ public class PersistentTest implements Callable<Void> {
     }
 
     void tryGuess() throws Exception {
-
 	Accounts a = new CreateInitial().call();
 
 	File file = new File("accounts.acc");

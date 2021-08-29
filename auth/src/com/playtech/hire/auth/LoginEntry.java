@@ -8,15 +8,15 @@ public class LoginEntry {
     }
 
     final String uid;
-    final String auth;
+    final SecurityToken auth;
 
     AuthType type;
 
-    LoginEntry(String uid, String auth) {
+    LoginEntry(String uid, SecurityToken auth) {
 	this(uid, auth, AuthType.PLAIN_TEXT);
     }
 
-    LoginEntry(String uid, String auth, AuthType type) {
+    LoginEntry(String uid, SecurityToken auth, AuthType type) {
 	this.uid = uid;
 	this.auth = auth;
 	this.type = type;
@@ -26,35 +26,35 @@ public class LoginEntry {
 	return uid;
     }
 
-    void addTo(Map<String, String> accounts) {
+    void addTo(Map<String, SecurityToken> accounts) {
 	if (null != accounts.putIfAbsent(uid, auth)) {
 	    throw new IllegalOperation("Account [%s] exists already", uid);
 	}
     }
 
-    void replaceExisting(Map<String, String> accounts) {
+    void replaceExisting(Map<String, SecurityToken> accounts) {
 	if (null == accounts.replace(uid, auth)) {
 	    throw new IllegalOperation("Account [%s] not found", uid);
 	}
     }
 
-    public boolean matchesPassword(String plainTextPassword) {
-	return isEqual(auth, plainTextPassword);
+    public boolean matchesPassword(SecurityToken securityToken) {
+	return auth.equals(securityToken);
     }
 
-    public static boolean isEqual(String digesta, String digestb) {// constant time equals
-	if (digesta == digestb)
-	    return true;
-	if (digesta == null || digestb == null) {
-	    return false;
-	}
-
-	int result = 0;
-	for (int i = 0, len = Math.min(digesta.length(), digestb.length()); i < len; i++) {
-	    result |= digesta.charAt(i) ^ digestb.charAt(i);
-	}
-	return result + digesta.length() - digestb.length() == 0;
-    }
+//    public static boolean isEqual(SecurityToken digesta, SecurityToken digestb) {// constant time equals
+//	if (digesta == digestb)
+//	    return true;
+//	if (digesta == null || digestb == null) {
+//	    return false;
+//	}
+//
+//	int result = 0;
+//	for (int i = 0, len = Math.min(digesta.length(), digestb.length()); i < len; i++) {
+//	    result |= digesta.charAt(i) ^ digestb.charAt(i);
+//	}
+//	return result + digesta.length() - digestb.length() == 0;
+//    }
 
     @Override
     public String toString() {

@@ -10,6 +10,8 @@ import java.io.OutputStream;
 import java.util.concurrent.Callable;
 
 import com.playtech.hire.auth.Accounts;
+import com.playtech.hire.auth.IStorage;
+import com.playtech.hire.auth.Storage;
 
 public class CreateInitial implements Callable<Accounts> {
 
@@ -19,11 +21,13 @@ public class CreateInitial implements Callable<Accounts> {
     }
 
     private static Accounts createInitial() throws IOException {
-	Accounts a = new Accounts();
+	IStorage s = Storage.createStorage();
+	Accounts a = new Accounts(s);
 	File initialFile = new File("initial.acc");
 
 	try (InputStream f = new FileInputStream(initialFile)) {
-	    a.getStorage().read(f);
+	    s.read(f);
+	    
 	    if (a.size() > 0) {
 		Assert.assertEquals(a.auth("xxs", "noPass0").getUid(), "xxs");
 		return a;
@@ -34,8 +38,11 @@ public class CreateInitial implements Callable<Accounts> {
 	a.create("xxs", "noPass0");
 	a.create("bin", "-txtBin");
 
+	if (s == null)
+	    return a;
+	
 	try (OutputStream out = new FileOutputStream(initialFile)) {
-	    a.getStorage().write(out);
+	    s.write(out);
 	}
 	return a;
     }
