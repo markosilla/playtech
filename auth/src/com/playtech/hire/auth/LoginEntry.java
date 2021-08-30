@@ -3,8 +3,10 @@ package com.playtech.hire.auth;
 import java.util.Map;
 
 public class LoginEntry {
+
     enum AuthType {
-	PLAIN_TEXT;// future use
+	PLAIN_TEXT,
+	PBKDF2
     }
 
     final String uid;
@@ -13,7 +15,7 @@ public class LoginEntry {
     AuthType type;
 
     LoginEntry(String uid, String auth) {
-	this(uid, auth, AuthType.PLAIN_TEXT);
+	this(uid, auth, AuthType.PBKDF2);
     }
 
     LoginEntry(String uid, String auth, AuthType type) {

@@ -20,13 +20,20 @@ import javax.crypto.spec.PBEKeySpec;
 public class PasswordEncryptionService {
 
     private static final int SALT_LEN = 8;
+    private static final int ITERATIONS = 1; /* Choose and see NIST recommendation below */
 
     public boolean authenticate(String attemptedPassword, String passwordWithSalt)
 	    throws NoSuchAlgorithmException, InvalidKeySpecException {
-	byte[] passwordWithSaltInBytes = this.decodeStringToBytes(passwordWithSalt);
+	byte[] passwordWithSaltInBytes = null;
 	byte[] salt = new byte[SALT_LEN];
 	byte[] encryptedPass = null;
 
+	try {
+	    passwordWithSaltInBytes = Base64.getDecoder().decode(passwordWithSalt);
+	} catch (IllegalArgumentException iae) {
+	    return false;
+	}
+	
 	if (passwordWithSaltInBytes.length <= SALT_LEN)
 	    throw new InvalidKeySpecException("Invalid hash key");
 
@@ -49,9 +56,9 @@ public class PasswordEncryptionService {
 	System.arraycopy(randomSalt, 0, passwordWithSaltInBytes, 0, SALT_LEN);
 	System.arraycopy(encryptedPass, 0, passwordWithSaltInBytes, SALT_LEN, encryptedPass.length);
 
-	return encodeBytesToString(passwordWithSaltInBytes);
+	return Base64.getEncoder().encodeToString(passwordWithSaltInBytes);
     }
-
+    
     private boolean authenticate(String attemptedPassword, byte[] encryptedPassword, byte[] salt)
 	    throws NoSuchAlgorithmException, InvalidKeySpecException {
 	// Encrypt the clear-text password using the same salt that was used to
@@ -75,10 +82,7 @@ public class PasswordEncryptionService {
 	// http://csrc.nist.gov/publications/nistpubs/800-132/nist-sp800-132.pdf
 	// iOS 4.x reportedly uses 10,000:
 	// http://blog.crackpassword.com/2010/09/smartphone-forensics-cracking-blackberry-backup-passwords/
-	int iterations = 20000;
-
-	KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, iterations, derivedKeyLength);
-
+	KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, ITERATIONS, derivedKeyLength);
 	SecretKeyFactory f = SecretKeyFactory.getInstance(algorithm);
 
 	return f.generateSecret(spec).getEncoded();
@@ -93,13 +97,5 @@ public class PasswordEncryptionService {
 	random.nextBytes(salt);
 
 	return salt;
-    }
-
-    private String encodeBytesToString(byte[] bytes) {
-	return Base64.getEncoder().encodeToString(bytes);
-    }
-
-    private byte[] decodeStringToBytes(String key) {
-	return Base64.getDecoder().decode(key);
     }
 }

@@ -25,6 +25,6 @@ public class SecurityTest implements Callable<Void> {
 
 	authRes = pes.authenticate("incorrectPassword", passwordWithSalt);
 	if (authRes != false)
-		  fail("Failed to reject authenication with invalid salt");
+	    fail("Failed to reject authenication with invalid salt");
     }
 }

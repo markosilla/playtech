@@ -1,11 +1,16 @@
 package com.playtech.hire.auth;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Objects;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import com.playtech.hire.auth.LoginEntry.AuthType;
+
 public class Accounts {
     final SortedMap<String, String> auth = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    final PasswordEncryptionService pes = new PasswordEncryptionService();
 
     void addExistingEntry(String uid, String storedPassword) {
 	auth.putIfAbsent(validateUid(uid), Objects.requireNonNull(storedPassword));
@@ -23,12 +28,30 @@ public class Accounts {
 	if (pwd == null) {
 	    return null;
 	}
-	LoginEntry e = new LoginEntry(uid, pwd);
-	if (e.matchesPassword(plainTextPassword)) {
-	    return new LoginEntry(auth.tailMap(uid).firstKey()// exact matching
-		    , pwd);
-	}
 
+	LoginEntry e = new LoginEntry(uid, pwd);
+
+	if (e.matchesPassword(plainTextPassword)) {
+	    try {
+		pwd = pes.getEncryptedPasswordWithSalt(plainTextPassword);
+	    } catch (NoSuchAlgorithmException e1) {
+		e1.printStackTrace();
+	    } catch (InvalidKeySpecException e1) {
+		e1.printStackTrace();
+	    }
+
+	    return new LoginEntry(auth.tailMap(uid).firstKey(), pwd, AuthType.PBKDF2); // exact matching
+	} else {
+	    try {
+		if (pes.authenticate(plainTextPassword, pwd) == true) {
+		    return new LoginEntry(auth.tailMap(uid).firstKey(), pwd, AuthType.PBKDF2);
+		}
+	    } catch (NoSuchAlgorithmException | InvalidKeySpecException e1) {
+		e1.printStackTrace();
+		return null;
+	    }
+	}
+	
 	return null;
     }
 
@@ -63,6 +86,8 @@ public class Accounts {
     }
 
     private LoginEntry newLoginEntry(String uid, String plainTextPassword) {
+	String securePassword = null;
+	
 	if (plainTextPassword.isEmpty()) {
 	    throw new IllegalOperation("Empty password");
 	}
@@ -70,8 +95,17 @@ public class Accounts {
 	if (plainTextPassword.trim() != plainTextPassword) {
 	    throw new IllegalOperation("Whitespaces at the begging/end of password");
 	}
+	
+	try {
+	    securePassword = pes.getEncryptedPasswordWithSalt(plainTextPassword);
+	} catch (NoSuchAlgorithmException | InvalidKeySpecException e1) {
+	    // TODO Auto-generated catch block
+	    e1.printStackTrace();
+	    return null;
+	}
 
-	LoginEntry e = new LoginEntry(validateUid(uid), plainTextPassword);
+	
+	LoginEntry e = new LoginEntry(validateUid(uid), securePassword, AuthType.PBKDF2);
 	return e;
     }
 

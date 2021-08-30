@@ -20,10 +20,15 @@ public class TestMain {
     }
 
     static int runTest() {
-	Collection<Callable<?>> tests = Arrays.asList(new CreateInitial(), new ValidityTest(), new ChangePasswordTest(),
+	Collection<Callable<?>> tests = Arrays.asList(
+		new CreateInitial(), 
+		new ValidityTest(), 
+		new ChangePasswordTest(),
 
 		new PersistentTest(), // run it thrice
-		new PersistentTest(), new PersistentTest(), new SecurityTest());
+		new PersistentTest(), 
+		new PersistentTest(), 
+		new SecurityTest());
 
 	int failures = 0;
 	for (Callable<?> c : tests) {
